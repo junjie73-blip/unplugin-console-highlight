@@ -3,6 +3,7 @@ import { defineConfig } from '@rspress/core';
 
 export default defineConfig({
   root: path.join(__dirname, 'docs'),
+  base: '/unplugin-console-highlight/',
   title: 'unplugin-console-highlight',
   description: '让 console 输出自带定位标签与语法高亮的 unplugin 插件',
   lang: 'zh-CN',
