@@ -1,8 +1,7 @@
 {
   "name": "unplugin-console-highlight-monorepo",
   "type": "module",
-  "version": "0.0.12",
-  "private": true,
+  "version": "0.0.1",
   "packageManager": "pnpm@10.15.0",
   "description": "Monorepo for unplugin-console-highlight: core plugin, framework examples and documentation site",
   "scripts": {
