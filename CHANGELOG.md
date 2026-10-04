@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 0.0.1 (2026-10-04)
+
+
+### Features
+
+* 🎸 改成Monorepo结构 ([308fd11](https://github.com/junjie73-blip/unplugin-console-highlight/commit/308fd11e1aa39d09508168823cfae97e43055ef6))
+
 ### [0.0.5](https://gitee.com/overflow_z/vite-plugin-fancy/compare/v0.0.4...v0.0.5) (2025-09-06)
 
 
