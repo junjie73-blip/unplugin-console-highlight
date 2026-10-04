@@ -41,4 +41,4 @@ jobs:
         # 使用 --filter 精准发布，不要 cd 进目录，避免 workspace 依赖解析出错
         run: pnpm --filter unplugin-console-highlight publish --no-git-checks --provenance --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
