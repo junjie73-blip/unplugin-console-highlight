@@ -31,7 +31,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Build (if needed)
         run: pnpm run build   # 如果包需要构建产物，否则删除这一步
