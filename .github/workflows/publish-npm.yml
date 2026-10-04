@@ -3,12 +3,12 @@ name: Publish to npm
 on:
   push:
     tags:
-      - 'v*'          # 推送 v1.0.0 这类 tag 时触发
-  workflow_dispatch:  # 也支持手动触发（可选）
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write     # Trusted Publishing / provenance 需要
+  id-token: write
 
 jobs:
   publish:
@@ -21,7 +21,7 @@ jobs:
 
       - uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 9 # 请改为你本地使用的 pnpm 版本
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -31,12 +31,14 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Build (if needed)
-        run: pnpm run build   # 如果包需要构建产物，否则删除这一步
+      - name: Build the package
+        # 在 monorepo 中，精准构建你要发布的包
+        run: pnpm --filter unplugin-console-highlight build
 
       - name: Publish to npm
-        run: pnpm publish --no-git-checks --provenance --access public
+        # 使用 --filter 精准发布，不要 cd 进目录，避免 workspace 依赖解析出错
+        run: pnpm --filter unplugin-console-highlight publish --no-git-checks --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

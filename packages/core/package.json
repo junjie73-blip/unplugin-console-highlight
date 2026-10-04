@@ -1,17 +1,17 @@
 {
   "name": "unplugin-console-highlight",
   "type": "module",
-  "version": "2.0.0",
+  "version": "0.0.11",
   "description": "An unplugin console transformer with turbo-style prefix/suffix labels and runtime value syntax highlighting that adapts to browser, terminal and plain environments",
   "author": "",
   "license": "ISC",
-  "homepage": "https://gitee.com/overflow_z/vite-plugin-fancy#readme",
+  "homepage": "https://github.com/junjie73-blip/unplugin-console-highlight#readme",
   "repository": {
     "type": "git",
-    "url": "https://gitee.com/overflow_z/vite-plugin-fancy.git"
+    "url": "https://github.com/junjie73-blip/unplugin-console-highlight.git"
   },
   "bugs": {
-    "url": "https://gitee.com/overflow_z/vite-plugin-fancy/issues"
+    "url": "https://github.com/junjie73-blip/unplugin-console-highlight/issues"
   },
   "keywords": ["unplugin", "vite", "rolldown", "webpack", "plugin", "console", "logger", "debug", "highlight", "turbo-console"],
   "exports": {
