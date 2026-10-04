@@ -1,0 +1,21 @@
+{
+  "name": "@console-highlight/example-react",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React 19 example for unplugin-console-highlight",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "unplugin-console-highlight": "workspace:*"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
+    "vite": "^7.0.0"
+  }
+}

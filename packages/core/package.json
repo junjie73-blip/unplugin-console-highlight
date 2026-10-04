@@ -1,0 +1,75 @@
+{
+  "name": "unplugin-console-highlight",
+  "type": "module",
+  "version": "2.0.0",
+  "description": "An unplugin console transformer with turbo-style prefix/suffix labels and runtime value syntax highlighting that adapts to browser, terminal and plain environments",
+  "author": "",
+  "license": "ISC",
+  "homepage": "https://gitee.com/overflow_z/vite-plugin-fancy#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://gitee.com/overflow_z/vite-plugin-fancy.git"
+  },
+  "bugs": {
+    "url": "https://gitee.com/overflow_z/vite-plugin-fancy/issues"
+  },
+  "keywords": ["unplugin", "vite", "rolldown", "webpack", "plugin", "console", "logger", "debug", "highlight", "turbo-console"],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./runtime": {
+      "types": "./dist/types/runtime/index.d.ts",
+      "import": "./dist/runtime.mjs",
+      "require": "./dist/runtime.cjs"
+    }
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "pretest": "pnpm run build",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json --emitDeclarationOnly && rolldown -c rolldown.config.js",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "prepublishOnly": "pnpm run build",
+    "lint:eslint": "eslint ./src --fix",
+    "lint:prettier": "prettier --write --loglevel warn \"src/**/*.{js,ts,json,tsx,css,less,scss,html,md}\""
+  },
+  "peerDependencies": {
+    "vite": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "picocolors": "^1.1.1",
+    "unplugin": "^3.4.0"
+  },
+  "optionalDependencies": {
+    "jiti": "^2.7.0",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^4.8.1",
+    "@types/node": "^22.13.9",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "rolldown": "^1.2.12",
+    "typescript": "^5.0.4",
+    "vite": "^7.1.2",
+    "vitest": "^5.0.3"
+  }
+}
