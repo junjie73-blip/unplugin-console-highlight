@@ -14,7 +14,7 @@
     "dev:react": "pnpm --filter @console-highlight/example-react dev",
     "docs:dev": "pnpm --filter @console-highlight/docs dev",
     "docs:build": "pnpm --filter @console-highlight/docs build",
-    "release": "standard-version",
+    "release": "pnpm --filter unplugin-console-highlight standard-version",
     "commit": "git pull && git add -A && git-cz && git push",
     "lint:lint-staged": "lint-staged"
   },
