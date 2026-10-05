@@ -1,7 +1,7 @@
 {
   "name": "unplugin-console-highlight",
   "type": "module",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "An unplugin console transformer with turbo-style prefix/suffix labels and runtime value syntax highlighting that adapts to browser, terminal and plain environments",
   "author": "",
   "license": "MIT",
