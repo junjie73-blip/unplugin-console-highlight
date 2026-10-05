@@ -1,0 +1,42 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
+  "baseBranch": "main",
+  "access": "public",
+  "format": "auto",
+  "changelog": [
+    "@changesets/changelog-github",
+    {
+      "repo": "https://github.com/junjie73-blip/unplugin-console-highlight.git"
+    }
+  ],
+  "commit": true,
+  "ignore": [],
+  "fixed": [],
+  "linked": [
+    [
+      "unplugin-console-highlight",
+      "patch"
+    ],
+    [
+      "@console-highlight/example-vanilla",
+      "patch"
+    ],
+    [
+      "@console-highlight/example-vue",
+      "patch"
+    ],
+    [
+      "@console-highlight/example-react",
+      "patch"
+    ],
+    [
+      "@console-highlight/docs",
+      "patch"
+    ],
+    [
+      "@console-highlight/docs",
+      "patch"
+    ]
+  ],
+  "updateInternalDependencies": "patch"
+}

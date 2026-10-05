@@ -71,7 +71,6 @@
   "dependencies": {
     "magic-string": "^0.30.21",
     "picocolors": "^1.1.1",
-    "standard-version": "^9.5.0",
     "unplugin": "^3.4.0"
   },
   "optionalDependencies": {
