@@ -26,7 +26,7 @@ type LabelInput =
   | false                                   // 关闭
   | string                                  // 模板：{icon} {file} {path} {line} {fn} {time} {tag} {method}
   | LabelSegment[]                          // 片段数组
-  | ((ctx: LabelContext) => string | LabelSegment[])  // 构建期按调用点求值
+  | ((ctx: LabelContext) => string | LabelSegment[])  // 函数：按调用点定制
 ```
 
 ```ts

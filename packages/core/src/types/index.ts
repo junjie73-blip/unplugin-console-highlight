@@ -29,6 +29,8 @@ export type ModeOption = ColorMode | 'auto'
  * 语法高亮 token 类别。
  */
 export type TokenKind =
+  /** 首个字符串参数：按日志正文渲染，不加引号 */
+  | 'message'
   | 'string'
   | 'number'
   | 'boolean'

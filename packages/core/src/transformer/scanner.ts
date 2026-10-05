@@ -4,7 +4,7 @@
  */
 
 export interface ConsoleCall {
-  /** console 方法名 */
+  /** console 方法名（计算成员已归一化为标识符形式） */
   method: string
   /** 整个调用表达式的起始偏移（`console` 关键字处） */
   start: number
@@ -12,6 +12,12 @@ export interface ConsoleCall {
   end: number
   /** 实参列表源码（不含最外层括号） */
   args: string
+  /** 左括号后第一个字符的偏移 */
+  argsStart: number
+  /** 右括号处的偏移（实参源码的结束位置） */
+  argsEnd: number
+  /** 原写法使用了可选链，改写后需保留 `?.` 调用语义 */
+  optional: boolean
   /** 所在函数名；顶层作用域为 null */
   fn: string | null
 }
@@ -29,6 +35,10 @@ interface Scope {
 const IDENT_RE = /[\w$]/
 const CONTROL_KEYWORDS = new Set(['if', 'for', 'while', 'switch', 'catch', 'with'])
 const METHOD_MODIFIERS = new Set(['static', 'get', 'set', 'async', 'private', 'public', 'protected', 'readonly', 'override'])
+/** `console` 允许的全局宿主前缀（`a.console.log` 之类的自定义对象不处理） */
+const CONSOLE_HOSTS = new Set(['globalThis', 'window', 'self', 'global'])
+const CONSOLE_HINT_RE = /console[.[?]/
+const CONSOLE_KEYWORD = 'console'
 
 function isRegexContext(lastSignificant: string): boolean {
   // 上一个有效字符处于这些情况时，`/` 更可能是正则字面量的开始
@@ -39,12 +49,12 @@ function isRegexContext(lastSignificant: string): boolean {
 }
 
 /**
- * 扫描代码，返回所有 `console.<method>(...)` 调用（按出现顺序），
+ * 扫描代码，返回所有 console 方法调用（按出现顺序），
  * 同时给出每个调用所在的函数名。
  */
 export function findConsoleCalls(code: string, methods: readonly string[]): ConsoleCall[] {
   const calls: ConsoleCall[] = []
-  if (!code.includes('console.')) {
+  if (!CONSOLE_HINT_RE.test(code)) {
     return calls
   }
 
@@ -168,10 +178,10 @@ export function findConsoleCalls(code: string, methods: readonly string[]): Cons
       continue
     }
 
-    if (char === 'c' && code.startsWith('console.', index)) {
-      // 排除 `xxconsole.` / `console.` 作为成员访问结果（如 a.console.log）
-      const prev = index > 0 ? code[index - 1]! : ''
-      if (prev === '' || (!IDENT_RE.test(prev) && prev !== '.')) {
+    if (char === 'c' && code.startsWith(CONSOLE_KEYWORD, index)) {
+      // 排除 `myconsole.log`（标识符延续）与 `a.console.log`（非全局宿主）
+      const next = code[index + CONSOLE_KEYWORD.length] ?? ''
+      if (!IDENT_RE.test(next) && receiverAllowed(code, index)) {
         const call = tryMatchCall(code, index, methodSet)
         if (call) {
           call.fn = innermostName()
@@ -267,6 +277,152 @@ export function findConsoleCalls(code: string, methods: readonly string[]): Cons
   }
 
   return calls
+}
+
+export interface IdentifierRef {
+  start: number
+  end: number
+}
+
+/** 其后的同名标识符是被声明者而非引用，不能替换 */
+const DECL_KEYWORDS = new Set(['class', 'const', 'enum', 'function', 'import', 'interface', 'let', 'namespace', 'type', 'var'])
+
+/**
+ * 扫描处于「值引用」位置的标识符，供 define 式文本替换使用。
+ * 忽略注释、字符串、正则字面量与成员属性；模板字符串的 `${}` 插值按代码递归处理。
+ */
+export function findValueRefs(code: string, name: string): IdentifierRef[] {
+  const refs: IdentifierRef[] = []
+  if (name !== '' && code.includes(name)) {
+    collectValueRefs(code, 0, code.length, name, refs)
+  }
+  return refs
+}
+
+function collectValueRefs(code: string, from: number, to: number, name: string, refs: IdentifierRef[]): void {
+  let index = from
+  let lastSignificant = ''
+  let prevWord = ''
+
+  while (index < to) {
+    const char = code[index]!
+
+    if (char === '/' && code[index + 1] === '/') {
+      index += 2
+      while (index < to && code[index] !== '\n') {
+        index++
+      }
+      continue
+    }
+    if (char === '/' && code[index + 1] === '*') {
+      index += 2
+      while (index < to && !(code[index] === '*' && code[index + 1] === '/')) {
+        index++
+      }
+      index += 2
+      continue
+    }
+    if (char === '"' || char === '\'' || char === '`') {
+      if (char === '`') {
+        const end = skipString(code, index)
+        collectTemplateExpressions(code, index, Math.min(end, to), name, refs)
+        index = end
+      }
+      else {
+        index = skipString(code, index)
+      }
+      lastSignificant = 'x'
+      prevWord = ''
+      continue
+    }
+    if (char === '/' && isRegexContext(lastSignificant)) {
+      const next = skipRegex(code, index)
+      if (next > index) {
+        index = next
+        lastSignificant = 'x'
+        prevWord = ''
+        continue
+      }
+    }
+
+    if (IDENT_RE.test(char) && !isIdentContinuation(code, index)) {
+      const end = readIdentEnd(code, index)
+      const word = code.slice(index, end)
+      if (word === name && isValuePosition(code, index, end, prevWord, to)) {
+        refs.push({ start: index, end })
+      }
+      prevWord = word
+      lastSignificant = char
+      index = end
+      continue
+    }
+
+    if (!/\s/.test(char)) {
+      lastSignificant = char
+    }
+    index++
+  }
+}
+
+/** 模板字符串的 `${}` 插值内部是真实代码，逐段递归扫描 */
+function collectTemplateExpressions(
+  code: string,
+  backtickAt: number,
+  to: number,
+  name: string,
+  refs: IdentifierRef[],
+): void {
+  let index = backtickAt + 1
+  while (index < to) {
+    const char = code[index]!
+    if (char === '\\') {
+      index += 2
+      continue
+    }
+    if (char === '$' && code[index + 1] === '{') {
+      const exprEnd = Math.min(skipBraces(code, index + 1) - 1, to)
+      collectValueRefs(code, index + 2, exprEnd, name, refs)
+      index = exprEnd + 1
+      continue
+    }
+    index++
+  }
+}
+
+/**
+ * 标识符是否可安全替换为字面量。排除：声明/关键字前导、赋值目标
+ * （`X = 1`）、对象与类型成员的键（`X: 1` / `X?: T`）、
+ * 简写属性与 import/export 说明符（`{ X, y }`）。
+ */
+function isValuePosition(
+  code: string,
+  start: number,
+  end: number,
+  prevWord: string,
+  to: number,
+): boolean {
+  if (DECL_KEYWORDS.has(prevWord)) {
+    return false
+  }
+  const nextAt = skipWs(code, end)
+  const next = nextAt < to ? code[nextAt] : ''
+  if (next === '=' && code[nextAt + 1] !== '=' && code[nextAt + 1] !== '>') {
+    return false
+  }
+  if (next === ':') {
+    return false
+  }
+  if (next === '?' && code[nextAt + 1] !== '.' && code[skipWs(code, nextAt + 1)] === ':') {
+    return false
+  }
+  if (next === ',' || next === '}') {
+    const before = skipWsBack(code, start - 1)
+    const prev = before < 0 ? '' : code[before]
+    if (prev === '{' || prev === ',') {
+      return false
+    }
+  }
+  return true
 }
 
 function isIdentContinuation(code: string, index: number): boolean {
@@ -531,18 +687,69 @@ function skipRegex(code: string, start: number): number {
   return start
 }
 
+/**
+ * `console` 之前的接收者是否允许被改写。
+ * 允许：非标识符前导（`(console.log`、`;console.log`）与全局宿主前缀
+ * （`globalThis.console` / `window.console`）；拒绝 `myconsole`、`a.console`。
+ */
+function receiverAllowed(code: string, consoleAt: number): boolean {
+  const p = consoleAt - 1
+  if (p < 0) {
+    return true
+  }
+  // 只看紧邻的前一个字符：换行/空白后的 `1\nconsole.log` 属于合法调用
+  if (code[p] !== '.') {
+    return !IDENT_RE.test(code[p]!)
+  }
+  const hostEnd = skipWsBack(code, p - 1)
+  if (hostEnd < 0 || !IDENT_RE.test(code[hostEnd]!)) {
+    return false
+  }
+  const hostStart = readIdentStart(code, hostEnd)
+  if (!CONSOLE_HOSTS.has(code.slice(hostStart, hostEnd + 1))) {
+    return false
+  }
+  // 宿主自身必须是顶层引用（`app.window.console` 不处理）
+  const before = skipWsBack(code, hostStart - 1)
+  return before < 0 || (code[before] !== '.' && !IDENT_RE.test(code[before]!))
+}
+
 function tryMatchCall(code: string, start: number, methodSet: Set<string>): ConsoleCall | null {
-  let index = start + 'console.'.length
-  const nameStart = index
-  while (index < code.length && IDENT_RE.test(code[index]!)) {
-    index++
+  let index = skipWs(code, start + CONSOLE_KEYWORD.length)
+
+  // 成员访问：`.log` / `?.log` / `["log"]`
+  let optional = false
+  if (code.startsWith('?.', index)) {
+    optional = true
+    index = skipWs(code, index + 2)
   }
-  const method = code.slice(nameStart, index)
-  if (!methodSet.has(method)) {
-    return null
+  else if (code[index] === '.') {
+    index = skipWs(code, index + 1)
   }
-  while (index < code.length && /\s/.test(code[index]!)) {
-    index++
+
+  let method: string
+  if (code[index] === '[') {
+    const parsed = readComputedMethod(code, index, methodSet)
+    if (!parsed) {
+      return null
+    }
+    method = parsed.method
+    index = parsed.after
+  }
+  else {
+    const nameEnd = readIdentEnd(code, index)
+    method = code.slice(index, nameEnd)
+    if (!methodSet.has(method)) {
+      return null
+    }
+    index = nameEnd
+  }
+
+  // 调用：`(...)` 或 `?.(...)`
+  index = skipWs(code, index)
+  if (code.startsWith('?.', index)) {
+    optional = true
+    index = skipWs(code, index + 2)
   }
   if (code[index] !== '(') {
     return null
@@ -557,8 +764,38 @@ function tryMatchCall(code: string, start: number, methodSet: Set<string>): Cons
     start,
     end: argsEnd + 1,
     args: code.slice(argsStart, argsEnd).trim(),
+    argsStart,
+    argsEnd,
+    optional,
     fn: null,
   }
+}
+
+/** 解析 `console["log"]` 形式的计算成员，返回方法名与 `]` 之后的偏移 */
+function readComputedMethod(
+  code: string,
+  bracketAt: number,
+  methodSet: Set<string>,
+): { method: string, after: number } | null {
+  const quoteAt = skipWs(code, bracketAt + 1)
+  const quote = code[quoteAt]
+  if (quote !== '"' && quote !== '\'') {
+    return null
+  }
+  const afterQuote = skipString(code, quoteAt)
+  const raw = code.slice(quoteAt + 1, afterQuote - 1)
+  // 含转义的方法名不做处理
+  if (raw === '' || raw.includes('\\')) {
+    return null
+  }
+  if (!methodSet.has(raw)) {
+    return null
+  }
+  const bracketEnd = skipWs(code, afterQuote)
+  if (code[bracketEnd] !== ']') {
+    return null
+  }
+  return { method: raw, after: bracketEnd + 1 }
 }
 
 /** 返回与 start 处 `(` 配对的 `)` 下标，字符串/注释感知；失败返回 -1 */

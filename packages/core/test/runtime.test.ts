@@ -167,11 +167,19 @@ describe('浏览器渲染', () => {
     expect(style).toMatch(/color:#(ffffff|1f2328);/)
   })
 
+  it('首个字符串参数按正文渲染：无引号 + message 色', () => {
+    const out = createHighlight(makeOptions({}, { env: 'browser', mode: 'light' }))('log', META, 'hello') as unknown[]
+    expect(out[0]).toBe('%c📝 log.ts·4 ~ logMessage %chello')
+    expect(out[2]).toBe('color: #1f2328;')
+  })
+
   it('亮/暗模式使用不同 token 与色板', () => {
-    const light = createHighlight(makeOptions({}, { env: 'browser', mode: 'light' }))('log', META, 's') as unknown[]
-    const dark = createHighlight(makeOptions({}, { env: 'browser', mode: 'dark' }))('log', META, 's') as unknown[]
+    const light = createHighlight(makeOptions({}, { env: 'browser', mode: 'light' }))('log', META, 'msg', 's') as unknown[]
+    const dark = createHighlight(makeOptions({}, { env: 'browser', mode: 'dark' }))('log', META, 'msg', 's') as unknown[]
     expect(light.join(' ')).toContain('#a31515')
     expect(dark.join(' ')).toContain('#ce9178')
+    expect(light.join(' ')).toContain('#1f2328')
+    expect(dark.join(' ')).toContain('#e6edf3')
     expect(light[1]).not.toBe(dark[1])
   })
 
@@ -181,7 +189,6 @@ describe('浏览器渲染', () => {
     const format = out[0] as string
     expect(format).toContain('%o')
     expect(out.at(-1)).toBe(payload)
-    expect(format).toContain('%c"n:"')
     expect(format).toContain('%c1')
   })
 
@@ -192,7 +199,7 @@ describe('浏览器渲染', () => {
 
   it('prefix 关闭后无前缀块', () => {
     const out = createHighlight(makeOptions({ prefix: false }, { env: 'browser', mode: 'light' }))('log', META, 'x') as unknown[]
-    expect((out[0] as string).startsWith('%c"x"')).toBe(true)
+    expect((out[0] as string).startsWith('%cx')).toBe(true)
   })
 
   it('icon 关闭后前缀不含图标', () => {
@@ -216,7 +223,7 @@ describe('浏览器渲染', () => {
     const out = createHighlight(makeOptions({ suffix: [{ type: 'tag' }] }, { env: 'browser', mode: 'light' }))('info', META, 'x') as unknown[]
     const format = out[0] as string
     expect(format.endsWith('%c[INFO]')).toBe(true)
-    expect(format.indexOf('[INFO]')).toBeGreaterThan(format.indexOf('"x"'))
+    expect(format.indexOf('[INFO]')).toBeGreaterThan(format.indexOf('%cx'))
   })
 
   it('片段级 background 覆盖形成多块', () => {
@@ -233,6 +240,26 @@ describe('浏览器渲染', () => {
     expect(out).toContain(payload)
     expect(out).toContain('raw')
   })
+
+  it('用户自带格式串保留指令与参数顺序', () => {
+    const style = 'color: #10b981; font-weight: bold;'
+    const out = createHighlight(makeOptions({}, { env: 'browser', mode: 'light' }))('log', META, '%c👋', style) as unknown[]
+    expect(out[0]).toBe('%c📝 log.ts·4 ~ logMessage %c👋')
+    expect(out[1] as string).toContain('background:#')
+    expect(out[2]).toBe(style)
+  })
+
+  it('文本中的 % 转义为 %%，不会被当作格式指令', () => {
+    const out = createHighlight(makeOptions({}, { env: 'browser', mode: 'light' }))('log', META, '100% done') as unknown[]
+    expect(out[0] as string).toContain('%c100%% done')
+  })
+
+  it('highlight 关闭时标签文本仍留在格式串里', () => {
+    const style = 'color: red;'
+    const out = createHighlight(makeOptions({ highlight: false }, { env: 'browser' }))('log', META, '%c👋', style) as unknown[]
+    expect(out[0]).toBe('%c📝 log.ts·4 ~ logMessage %c👋')
+    expect(out[2]).toBe(style)
+  })
 })
 
 describe('终端渲染', () => {
@@ -244,8 +271,9 @@ describe('终端渲染', () => {
   })
 
   it('值按暗色 token 着色', () => {
-    const out = createHighlight(makeOptions({}, { env: 'terminal', mode: 'dark' }))('log', META, 's') as string[]
-    expect(out[1]).toContain('\u001B[38;2;206;145;120m')
+    const out = createHighlight(makeOptions({}, { env: 'terminal', mode: 'dark' }))('log', META, 'msg', 's') as string[]
+    expect(out[1]).toContain('\u001B[38;2;230;237;243m')
+    expect(out[2]).toContain('\u001B[38;2;206;145;120m')
   })
 
   it('suffix 作为最后一个参数', () => {
@@ -257,6 +285,12 @@ describe('终端渲染', () => {
     const payload = { keep: true }
     const out = createHighlight(makeOptions({ highlight: false }, { env: 'terminal' }))('log', META, payload) as unknown[]
     expect(out).toContain(payload)
+  })
+
+  it('无前缀时首个片段转义 %，避免 Node 把后续参数当替换值吞掉', () => {
+    const out = createHighlight(makeOptions({ prefix: false }, { env: 'terminal', mode: 'dark' }))('log', META, '%s', 'tail') as string[]
+    expect(out[0]).toContain('%%s')
+    expect(out[1]).toContain('"tail"')
   })
 })
 
@@ -290,5 +324,62 @@ describe('Highlighter 属性', () => {
   it('stringify 输出纯文本', () => {
     const highlight = createHighlight(makeOptions({}, { env: 'plain' }))
     expect(highlight.stringify({ a: 1 })).toBe('{a: 1}')
+  })
+})
+
+/** 按 devtools 规则消费格式串：`%c` 只吃样式不产出文本，其余指令产出对应参数 */
+function simulate(out: unknown[]): { text: string, consumed: number } {
+  const format = String(out[0])
+  const subs = out.slice(1)
+  let text = ''
+  let consumed = 0
+  for (let index = 0; index < format.length; index++) {
+    const char = format[index]
+    if (char !== '%') {
+      text += char
+      continue
+    }
+    const directive = format[++index]!
+    if (directive === '%') {
+      text += '%'
+    }
+    else if ('csdifoO'.includes(directive)) {
+      const value = subs[consumed++]
+      text += directive === 'c' ? '' : String(value)
+    }
+    else {
+      text += `%${directive}`
+    }
+  }
+  return { text, consumed }
+}
+
+describe('格式串与替换值对齐（devtools 模拟）', () => {
+  const browser = (args: unknown[]) =>
+    createHighlight(makeOptions({}, { env: 'browser', mode: 'light' }))('log', META, ...args) as unknown[]
+
+  it.each([
+    ['纯文本', ['hello']],
+    ['文本含百分号', ['100% done']],
+    ['文本含 %c 指令', ['%c👋', 'color: red;']],
+    ['文本含 %s 指令', ['%s!', 'x']],
+    ['对象参数', ['msg', { a: 1 }]],
+    ['多个原始值', ['msg', 1, true, null, 's']],
+  ])('%s：所有替换值都被指令消费', (_name, args) => {
+    const out = browser(args)
+    const { consumed } = simulate(out)
+    expect(consumed).toBe(out.length - 1)
+  })
+
+  it('用户自带指令不再泄漏出裸 %c 与样式串', () => {
+    const out = browser(['%c👋', 'color: #10b981; font-weight: bold;'])
+    const { text } = simulate(out)
+    expect(text).toBe('📝 log.ts·4 ~ logMessage 👋')
+    expect(text).not.toContain('%c')
+    expect(text).not.toContain('font-weight')
+  })
+
+  it('普通文本里的 % 原样显示', () => {
+    expect(simulate(browser(['100% done'])).text).toBe('📝 log.ts·4 ~ logMessage 100% done')
   })
 })

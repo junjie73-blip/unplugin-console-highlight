@@ -5,7 +5,7 @@ export default defineConfig([
   {
     input: 'src/index.ts',
     platform: 'node',
-    external: ['vite', 'unplugin'],
+    external: ['vite', 'unplugin', 'magic-string'],
     output: [
       { file: 'dist/index.mjs', format: 'es', exports: 'named' },
       { file: 'dist/index.cjs', format: 'cjs', exports: 'named' },

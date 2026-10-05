@@ -8,7 +8,7 @@ pnpm dev:react
 
 ## 配置
 
-内联配置展示**函数形式 suffix**（构建期按调用点求值）：
+内联配置展示**函数形式的 suffix**（按调用点定制）：
 
 ```js [vite.config.js]
 import react from '@vitejs/plugin-react'
@@ -92,15 +92,15 @@ export default function TodoList({ items, onAdd, onRemove }) {
 
 ## 效果
 
-<span style="background:#1890ff;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">📝 App.jsx·8 ~ useEffect</span> <span style="color:#a31515">"App 已挂载"</span> {items: 2} <span style="color:#57606a">‹info›</span>
+<span style="background:#2563eb;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">📝 App.jsx·8 ~ useEffect</span> <span style="color:#1f2328">App 已挂载</span> {items: 2} <span style="color:#57606a">‹info›</span>
 
-<span style="background:#faad14;color:#1f2328;padding:2px 6px;border-radius:4px;font-weight:600">📝 App.jsx·13 ~ addItem</span> <span style="color:#a31515">"新增待办："</span> <span style="color:#a31515">"写文档"</span> <span style="color:#57606a">‹log›</span>
+<span style="background:#d97706;color:#ffffff;padding:2px 6px;border-radius:4px;font-weight:600">📝 App.jsx·13 ~ addItem</span> <span style="color:#1f2328">新增待办：</span> <span style="color:#a31515">"写文档"</span> <span style="color:#57606a">‹log›</span>
 
-<span style="background:#52c41a;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">📝 TodoList.jsx·8 ~ submit</span> <span style="color:#a31515">"待办标题不能为空"</span> <span style="color:#57606a">‹error›</span>
+<span style="background:#059669;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">📝 TodoList.jsx·8 ~ submit</span> <span style="color:#1f2328">待办标题不能为空</span> <span style="color:#57606a">‹error›</span>
 
 要点：
 
 - hooks 回调（`useEffect` / `useCallback`）被识别为函数名
 - 事件处理函数 `submit`、JSX 内联箭头（归属顶层）均正确定位
-- suffix 使用函数形式，构建期生成 `‹method›` 模板，运行期零开销
+- suffix 用函数形式给每条日志追加 `‹方法名›`，与方法标签片段互不干扰
 - StrictMode 双调用下标签与高亮表现一致

@@ -7,8 +7,10 @@ import {
   LIGHT_PALETTE,
 } from '../src/config/default-config'
 import {
+  computeLineOffsets,
   deepEqual,
   getLineNumber,
+  lineAtOffset,
   mergeConfig,
   shouldTransform,
   toRuntimeOptions,
@@ -126,5 +128,23 @@ describe('deepEqual', () => {
 describe('getLineNumber', () => {
   it('按偏移计算行号', () => {
     expect(getLineNumber('a\nb\nc', 4)).toBe(3)
+  })
+})
+
+describe('computeLineOffsets / lineAtOffset', () => {
+  it('与 getLineNumber 逐偏移一致', () => {
+    const code = 'a\nbb\n\nccc\r\nd\n'
+    const offsets = computeLineOffsets(code)
+    for (let index = 0; index < code.length; index++) {
+      expect(lineAtOffset(offsets, index)).toBe(getLineNumber(code, index))
+    }
+  })
+
+  it('覆盖首行、末行与单行文件', () => {
+    const offsets = computeLineOffsets('console.log(1)')
+    expect(lineAtOffset(offsets, 0)).toBe(1)
+    expect(lineAtOffset(offsets, 13)).toBe(1)
+    const multi = computeLineOffsets('a\nb\nc')
+    expect([lineAtOffset(multi, 0), lineAtOffset(multi, 2), lineAtOffset(multi, 4)]).toEqual([1, 2, 3])
   })
 })

@@ -19,15 +19,16 @@ export const DEFAULT_ICONS: Record<ConsoleMethod, string> = {
 
 /** 方法标签颜色（两种模式共用） */
 const TAG_COLORS: Record<ConsoleMethod, string> = {
-  log: '#1890ff',
-  info: '#52c41a',
-  warn: '#d48806',
-  error: '#ff4d4f',
-  debug: '#9254de',
+  log: '#2563eb',
+  info: '#059669',
+  warn: '#d97706',
+  error: '#e11d48',
+  debug: '#7c3aed',
 }
 
 /** 亮色模式 token（参考 VSCode Light+ 语法配色） */
 const LIGHT_TOKENS: HighlightTokens = {
+  message: '#1f2328',
   string: '#a31515',
   number: '#098658',
   boolean: '#0000ff',
@@ -42,6 +43,7 @@ const LIGHT_TOKENS: HighlightTokens = {
 
 /** 暗色模式 token（参考 VSCode Dark+ 语法配色） */
 const DARK_TOKENS: HighlightTokens = {
+  message: '#e6edf3',
   string: '#ce9178',
   number: '#b5cea8',
   boolean: '#569cd6',
@@ -60,28 +62,31 @@ export const TOKEN_PRESETS: Record<ColorMode, HighlightTokens> = {
   dark: DARK_TOKENS,
 }
 
-/** 亮色模式标签自动取色色板（高饱和，适配浅色 devtools / 终端） */
+/**
+ * 亮色模式标签自动取色色板：同一明度档位的中间调，
+ * 保证白字对比度达标且多文件并排时不刺眼。
+ */
 export const LIGHT_PALETTE: string[] = [
-  '#1890ff',
-  '#faad14',
-  '#52c41a',
-  '#eb2f96',
-  '#722ed1',
-  '#13c2c2',
-  '#fa541c',
-  '#2f54eb',
+  '#2563eb',
+  '#0d9488',
+  '#7c3aed',
+  '#e11d48',
+  '#d97706',
+  '#059669',
+  '#0e7490',
+  '#475569',
 ]
 
-/** 暗色模式标签自动取色色板（低明度，适配深色 devtools / 终端） */
+/** 暗色模式标签自动取色色板：深色背景下用中高明度色，前景自动转深色 */
 export const DARK_PALETTE: string[] = [
-  '#1668dc',
-  '#d89614',
-  '#49aa19',
-  '#c41d7f',
-  '#642ab5',
-  '#0e8f8f',
-  '#d4380d',
-  '#2b4acb',
+  '#60a5fa',
+  '#2dd4bf',
+  '#a78bfa',
+  '#fb7185',
+  '#fbbf24',
+  '#34d399',
+  '#22d3ee',
+  '#94a3b8',
 ]
 
 /**

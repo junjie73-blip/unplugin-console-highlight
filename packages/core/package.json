@@ -55,6 +55,7 @@
     }
   },
   "dependencies": {
+    "magic-string": "^0.30.21",
     "picocolors": "^1.1.1",
     "unplugin": "^3.4.0"
   },

@@ -10,7 +10,7 @@ import colors from 'picocolors'
 import { createUnplugin } from 'unplugin'
 import { DEFAULT_CONFIG } from './config/default-config'
 import { CONFIG_FILE_NAMES, loadConfig } from './config/loader'
-import { transformCode, VIRTUAL_MODULE_ID } from './transformer'
+import { FLAG_VALUE, GLOBAL_FLAG_NAME, transformCode, VIRTUAL_MODULE_ID } from './transformer'
 import { deepEqual, mergeConfig, shouldTransform, toRuntimeOptions } from './utils'
 
 export const PLUGIN_NAME = 'unplugin-console-highlight'
@@ -94,7 +94,7 @@ const unplugin = createUnplugin((userOptions: ConsoleHighlightOptions = {}, meta
         resolveOptions(path.resolve(config.root || process.cwd()))
         return {
           define: {
-            __CONSOLE_HIGHLIGHT__: JSON.stringify(true),
+            [GLOBAL_FLAG_NAME]: FLAG_VALUE,
           },
         }
       },
@@ -194,7 +194,20 @@ export {
   hexToAnsiBackground,
   serializeToSegments,
 } from './runtime'
-export { transformCode, VIRTUAL_MODULE_ID } from './transformer'
+export {
+  FLAG_VALUE,
+  GLOBAL_FLAG_NAME,
+  transformCode,
+  VIRTUAL_MODULE_ID,
+} from './transformer'
 export { defineConsoleHighlightConfig, defineLabel } from './types'
 export type * from './types'
-export { deepEqual, getLineNumber, mergeConfig, shouldTransform, toRuntimeOptions } from './utils'
+export {
+  computeLineOffsets,
+  deepEqual,
+  getLineNumber,
+  lineAtOffset,
+  mergeConfig,
+  shouldTransform,
+  toRuntimeOptions,
+} from './utils'

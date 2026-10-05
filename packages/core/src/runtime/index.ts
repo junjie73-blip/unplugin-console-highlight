@@ -363,6 +363,13 @@ export function serializeToSegments(value: unknown, limits: SerializeLimits): Se
 
 const TEMPLATE_TOKEN_RE = /\{(icon|file|path|line|fn|time|tag|method)\}/g
 
+/** devtools/Node 只在首个参数解析的格式指令，文本里出现 `%` 需要转义 */
+const FORMAT_DIRECTIVE_RE = /%[csdifoO%]/
+
+function escapePercent(text: string): string {
+  return text.includes('%') ? text.replace(/%/g, '%%') : text
+}
+
 interface LabelPiece {
   text: string
   color?: string
@@ -571,20 +578,28 @@ export function createHighlight(options: HighlightRuntimeOptions): Highlighter {
 
     if (!options.highlightValues) {
       // 未开启值高亮：仅输出标签，参数原样透传
+      const first = args[0]
+      const isFormatString = typeof first === 'string' && FORMAT_DIRECTIVE_RE.test(first)
       if (currentEnv === 'browser') {
-        const format = prefixRuns.map(() => '%c').join('')
-        const styles = prefixRuns.map(browserStyle)
-        const extra = [...args]
+        const tokens = prefixRuns.map(run => `%c${escapePercent(run.text)}`)
+        const extra: unknown[] = [...args]
         if (suffixRuns.length > 0) {
           extra.push(suffixRuns.map(run => run.text).join(''))
         }
-        return [format, ...styles, ...extra]
+        if (tokens.length === 0) {
+          return extra
+        }
+        const head = `${tokens.join('')} `
+        const styles = prefixRuns.map(browserStyle)
+        return isFormatString
+          ? [`${head}${first}`, ...styles, ...args.slice(1)]
+          : [head, ...styles, ...extra]
       }
       const prefixText = prefixRuns.map(currentEnv === 'terminal' ? ansiRun : plainRun).join('')
       const suffixText = suffixRuns.map(currentEnv === 'terminal' ? ansiRun : plainRun).join('')
       const out: unknown[] = []
       if (prefixText) {
-        out.push(prefixText)
+        out.push(currentEnv === 'terminal' ? prefixText : escapePercent(prefixText))
       }
       out.push(...args)
       if (suffixText) {
@@ -598,39 +613,60 @@ export function createHighlight(options: HighlightRuntimeOptions): Highlighter {
       const parts: { token: string, substitution?: unknown }[] = []
       const pushRuns = (runs: StyleRun[]) => {
         for (const run of runs) {
-          parts.push({ token: `%c${run.text}`, substitution: browserStyle(run) })
+          parts.push({ token: `%c${escapePercent(run.text)}`, substitution: browserStyle(run) })
         }
       }
+      const first = args[0]
+      // 用户自带格式串（`console.log('%c…', style)`）时保留其指令与参数顺序，插件只加标签
+      const isFormatString = typeof first === 'string' && FORMAT_DIRECTIVE_RE.test(first)
       pushRuns(prefixRuns)
-      args.forEach((arg, index) => {
-        if (index > 0 || prefixRuns.length > 0) {
+      if (isFormatString) {
+        if (prefixRuns.length > 0) {
           parts.push({ token: ' ' })
         }
-        if (isPrimitive(arg)) {
-          const segments = serializeToSegments(arg, limits())
-          const currentTokens = tokens()
-          for (const segment of segments) {
-            const fg = currentTokens[segment.kind]
-            const last = parts[parts.length - 1]
-            if (last && last.substitution === `color: ${fg};` && !last.token.startsWith('%o')) {
-              last.token += segment.text
-            }
-            else {
-              parts.push({ token: `%c${segment.text}`, substitution: `color: ${fg};` })
+        parts.push({ token: first })
+        for (const arg of args.slice(1)) {
+          parts.push({ token: '', substitution: arg })
+        }
+      }
+      else {
+        args.forEach((arg, index) => {
+          if (index > 0 || prefixRuns.length > 0) {
+            parts.push({ token: ' ' })
+          }
+          if (index === 0 && typeof arg === 'string') {
+            // 首个字符串参数是日志正文：不加引号，用正文色
+            parts.push({
+              token: `%c${escapePercent(truncate(arg, limits().maxStringLength))}`,
+              substitution: `color: ${tokens().message};`,
+            })
+          }
+          else if (isPrimitive(arg)) {
+            const segments = serializeToSegments(arg, limits())
+            const currentTokens = tokens()
+            for (const segment of segments) {
+              const fg = currentTokens[segment.kind]
+              const last = parts[parts.length - 1]
+              if (last && last.substitution === `color: ${fg};` && !last.token.startsWith('%o')) {
+                last.token += escapePercent(segment.text)
+              }
+              else {
+                parts.push({ token: `%c${escapePercent(segment.text)}`, substitution: `color: ${fg};` })
+              }
             }
           }
-        }
-        else {
-          parts.push({ token: '%o', substitution: arg })
-        }
-      })
+          else {
+            parts.push({ token: '%o', substitution: arg })
+          }
+        })
+      }
       if (suffixRuns.length > 0) {
         parts.push({ token: ' ' })
         pushRuns(suffixRuns)
       }
       return [
         parts.map(part => part.token).join(''),
-        ...parts.filter(part => part.substitution !== undefined).map(part => part.substitution),
+        ...parts.filter(part => 'substitution' in part).map(part => part.substitution),
       ]
     }
 
@@ -641,7 +677,15 @@ export function createHighlight(options: HighlightRuntimeOptions): Highlighter {
       if (prefixText) {
         out.push(prefixText)
       }
-      for (const arg of args) {
+      for (const [index, arg] of args.entries()) {
+        if (index === 0 && typeof arg === 'string') {
+          out.push(ansiRun({
+            text: truncate(arg, limits().maxStringLength),
+            fg: currentTokens.message,
+            bg: null,
+          }))
+          continue
+        }
         out.push(
           serializeToSegments(arg, limits())
             .map(segment => ansiRun({ text: segment.text, fg: currentTokens[segment.kind], bg: null }))
@@ -651,6 +695,10 @@ export function createHighlight(options: HighlightRuntimeOptions): Highlighter {
       const suffixText = suffixRuns.map(ansiRun).join('')
       if (suffixText) {
         out.push(suffixText)
+      }
+      // Node 只在首个参数解析格式指令，转义后可避免用户文本吞掉后续参数
+      if (typeof out[0] === 'string') {
+        out[0] = escapePercent(out[0])
       }
       return out
     }

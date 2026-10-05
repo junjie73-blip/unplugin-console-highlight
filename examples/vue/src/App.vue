@@ -11,6 +11,8 @@ function logEnvironment() {
 onMounted(() => {
   ready.value = true
   console.log('App 挂载完成', { ready: ready.value })
+  console.log('%c👋 手写格式串与插件标签共存', 'color:#0d9488;font-weight:bold;font-size:14px;')
+  console.log('百分号 100% 不会被当成格式指令')
   logEnvironment()
 })
 </script>

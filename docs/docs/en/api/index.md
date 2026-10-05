@@ -1,23 +1,23 @@
-# 导出与类型
+# Exports & Types
 
-本页列出书写配置时会用到的导入项。配置字段逐项说明见[配置项参考](/config/options)。
+This page lists the imports you need when writing configuration. For what each field does, see the [Options reference](/en/config/options).
 
-## 插件工厂
+## Plugin factories
 
-按你使用的构建工具导入对应工厂，参数都是同一份配置对象：
+Import the factory for the build tool you use. They all take the same configuration object:
 
-| 导出 | 用在哪里 |
+| Export | Where to use it |
 | --- | --- |
 | `vitePlugin` | `vite.config.ts` |
 | `rollupPlugin` | `rollup.config.js` |
 | `webpackPlugin` | `webpack.config.js` |
 | `rspackPlugin` | `rspack.config.js` |
-| `esbuildPlugin` | esbuild 的 `plugins` 数组 |
+| `esbuildPlugin` | The esbuild `plugins` array |
 | `farmPlugin` | `farm.config.ts` |
-| `default` | unplugin 实例，供自定义流水线使用 |
-| `PLUGIN_NAME` | 插件名字符串 `'unplugin-console-highlight'` |
+| `default` | The unplugin instance, for a custom pipeline |
+| `PLUGIN_NAME` | The plugin name string `'unplugin-console-highlight'` |
 
-## 配置辅助
+## Config helpers
 
 ```ts
 import {
@@ -38,7 +38,7 @@ const label = defineLabel([
 ])
 ```
 
-推导工具类型：
+Inference helpers:
 
 ```ts
 import type { InferMethods, InferIcons } from 'unplugin-console-highlight'
@@ -47,9 +47,9 @@ type Methods = InferMethods<typeof config>  // 'log' | 'warn'
 type Icons = InferIcons<typeof config>      // { log: '🚀', warn: '⚠️' }
 ```
 
-## 全局常量
+## Global constant
 
-注册插件后可以直接在业务代码里判断插件是否在工作：
+Once the plugin is registered, your code can check whether it is active:
 
 ```ts
 if (__CONSOLE_HIGHLIGHT__) {
@@ -57,32 +57,32 @@ if (__CONSOLE_HIGHLIGHT__) {
 }
 ```
 
-TypeScript 项目需要声明一次：
+TypeScript projects need one declaration:
 
 ```ts
 declare const __CONSOLE_HIGHLIGHT__: boolean
 ```
 
-若只想拿到类型而不写死值，也可以导入常量名：
+To get the type without hardcoding the name, import the constant's name instead:
 
 ```ts
 import { GLOBAL_FLAG_NAME } from 'unplugin-console-highlight' // '__CONSOLE_HIGHLIGHT__'
 ```
 
-详细说明见[常见问题](/advanced/faq)的「如何在代码里判断插件是否启用」。
+For details, see "How do I check in my code whether the plugin is enabled?" in the [FAQ](/en/advanced/faq).
 
-## 默认值参考
+## Default value references
 
-配置时想「回到默认」或做局部覆盖，可以引用这些导出：
+To get back to a default or override part of it, reuse these exports:
 
-| 导出 | 内容 |
+| Export | Content |
 | --- | --- |
-| `DEFAULT_CONFIG` | 完整默认配置 |
-| `DEFAULT_PREFIX` / `DEFAULT_LABEL` / `DEFAULT_ICONS` | 默认前缀片段、标签样式、图标 |
-| `TOKEN_PRESETS` | `{ light, dark }` 内置配色 |
-| `LIGHT_PALETTE` / `DARK_PALETTE` | 内置标签色板 |
-| `CONFIG_FILE_NAMES` / `PACKAGE_CONFIG_FIELD` | 候选配置文件名与 `package.json` 字段名 |
-| `resolveTokens(overrides)` | 合并自定义配色，返回亮 / 暗两套 |
+| `DEFAULT_CONFIG` | The full default configuration |
+| `DEFAULT_PREFIX` / `DEFAULT_LABEL` / `DEFAULT_ICONS` | Default prefix fragments, label style, and icons |
+| `TOKEN_PRESETS` | Built-in `{ light, dark }` color sets |
+| `LIGHT_PALETTE` / `DARK_PALETTE` | Built-in label palettes |
+| `CONFIG_FILE_NAMES` / `PACKAGE_CONFIG_FIELD` | Candidate config file names and the `package.json` field name |
+| `resolveTokens(overrides)` | Merges your color overrides and returns the light and dark sets |
 
 ```ts
 import { DEFAULT_PREFIX, TOKEN_PRESETS } from 'unplugin-console-highlight'
@@ -95,7 +95,7 @@ vitePlugin({
 })
 ```
 
-## 主要类型
+## Main types
 
 ```ts
 type ConsoleMethod = 'log' | 'info' | 'warn' | 'error' | 'debug'

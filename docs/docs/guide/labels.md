@@ -33,7 +33,7 @@ vitePlugin({
 | `path` | 相对路径 | 相对项目根（posix 风格） |
 | `line` | 行号 | 调用所在行（从 1 开始） |
 | `function` | 函数名 | 所在函数 / 方法 / 箭头函数名；顶层为 null 时省略 |
-| `time` | 时间戳 | 运行期实时格式化，受 `timeFormat` 控制 |
+| `time` | 时间戳 | 每次输出时取当前时间，格式受 `timeFormat` 控制 |
 | `tag` | `[LOG]` | 方法名大写标签 |
 | `method` | `log` | 方法名小写原文 |
 | `text` | 固定文本 | 由 `value` 指定 |
@@ -58,20 +58,21 @@ vitePlugin({
 占位符：`{icon}` `{file}` `{path}` `{line}` `{fn}` `{time}` `{tag}` `{method}`。
 模板整体共用一个样式块；`{fn}` 为空时展开为空字符串。
 
-### 3. 函数（构建期求值）
+### 3. 函数（按调用点定制）
 
-函数在**构建期按调用点**求值，可拿到完整位置信息，返回模板或片段数组：
+函数形式可以拿到当前调用点的完整位置信息，返回模板字符串或片段数组：
 
 ```ts
 vitePlugin({
   prefix: ({ method, file, line, fn }) =>
-    fn ? [{ type: 'text', value: `${fn}()`, background: '#722ed1' }] : false,
+    fn ? [{ type: 'text', value: `${fn}()`, background: '#7c3aed' }] : false,
   suffix: ctx => `‹${ctx.method}#${ctx.line}›`,
 })
 ```
 
 ::: tip
-函数形式在构建期求值后序列化进产物，因此运行期零开销；但函数本身不能依赖运行时状态。
+函数形式的结果在打包时就已确定，因此不要依赖运行时才有的状态（如实时数据、用户输入）。
+需要时间请用 `time` 片段，它在每次输出时取当前时间。
 :::
 
 ## 视觉样式（label）
@@ -82,8 +83,8 @@ vitePlugin({
     mode: 'chip',        // 'chip' 色块背景（默认） | 'text' 仅前景色
     color: 'auto',       // 'auto' 按文件名哈希取色 | 固定十六进制
     palette: {           // auto 取色色板，可按亮 / 暗模式分别配置
-      light: ['#1890ff', '#faad14', '#52c41a', '#eb2f96'],
-      dark: ['#1668dc', '#d89614', '#49aa19', '#c41d7f'],
+      light: ['#2563eb', '#d97706', '#059669', '#e11d48'],
+      dark: ['#60a5fa', '#fbbf24', '#34d399', '#fb7185'],
     },
     textColor: 'auto',   // chip 前景色；'auto' 按背景亮度取黑 / 白
     css: 'border-radius:4px;padding:2px 6px;font-weight:600;', // 附加 CSS（仅带背景片段）
@@ -93,7 +94,7 @@ vitePlugin({
 
 - `mode: 'text'` 时标签只着色文字、无色块，适合极简风格
 - 片段级 `background` 优先级高于 `label.color`，可用于「图标一块、位置一块」的分色设计
-- 终端环境下色块映射为 24-bit ANSI 背景色，`css` 被忽略
+- 终端与纯文本环境下 `css` 不生效（终端用背景色模拟色块，纯文本环境只输出文字）
 
 ## 关闭标签
 

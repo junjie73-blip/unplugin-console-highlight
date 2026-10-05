@@ -65,6 +65,36 @@ export function getLineNumber(code: string, index: number): number {
 }
 
 /**
+ * 预计算每一行的起始偏移（`[0, 第二行起点, ...]`），
+ * 供整文件批量求行号，避免逐次切片带来的 O(调用数 × 文件长度)。
+ */
+export function computeLineOffsets(code: string): number[] {
+  const offsets = [0]
+  for (let index = 0; index < code.length; index++) {
+    if (code[index] === '\n') {
+      offsets.push(index + 1)
+    }
+  }
+  return offsets
+}
+
+/** 在行首偏移表上二分求行号（从 1 开始） */
+export function lineAtOffset(offsets: number[], index: number): number {
+  let low = 0
+  let high = offsets.length - 1
+  while (low < high) {
+    const mid = (low + high + 1) >> 1
+    if (offsets[mid]! <= index) {
+      low = mid
+    }
+    else {
+      high = mid - 1
+    }
+  }
+  return low + 1
+}
+
+/**
  * 将用户配置与默认配置合并为归一化配置。
  * include/exclude 采用叠加语义，其余字段后者覆盖前者。
  */

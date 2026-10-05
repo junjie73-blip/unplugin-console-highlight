@@ -2,21 +2,21 @@
 
 ## 值高亮
 
-开启 `highlight`（默认）后，console 的**原始值**会被序列化并着色：
+开启 `highlight`（默认）后，console 的**参数**会按类型着色显示：
 
 ```ts
 console.log('user', { name: 'zy', age: 18, tags: ['a', 'b'] })
 ```
 
-- 浏览器：原始值（字符串 / 数字 / 布尔 / null 等）按 token 着色；**对象保留 `%o` 原生展示**，devtools 中仍可展开、可交互
-- 终端：全部值序列化为带 ANSI 颜色的文本
-- 纯文本环境：标签纯文本 + 参数原样透传
+- 浏览器：字符串 / 数字 / 布尔 / null 等着色；**对象保持 devtools 原生展示**，仍可展开、可搜索、可点击跳转
+- 终端：所有参数显示为着色文本，可复制
+- 纯文本环境（CI、重定向到文件）：只显示标签与参数原文，不产生乱码
 
-支持的序列化行为：
+各类参数的显示效果：
 
-| 值类型 | 展示 |
+| 参数类型 | 显示 |
 | --- | --- |
-| string | 带引号，超过 `maxStringLength` 截断为 `…` |
+| string | 首个字符串参数按日志正文显示（不加引号）；其余带引号，超过 `maxStringLength` 截断为 `…` |
 | number / bigint | 原样（`-0`、`10n` 特殊处理） |
 | boolean / null / undefined | 原样 |
 | function | `ƒ name()` |
@@ -63,14 +63,28 @@ vitePlugin({
 })
 ```
 
-token 类别：`string` `number` `boolean` `nullish` `key` `punctuation` `callable` `special` `prefix` `tags`（各方法标签色）。
+token 类别：`message` `string` `number` `boolean` `nullish` `key` `punctuation` `callable` `special` `prefix` `tags`（各方法标签色）。
+
+`message` 用于**首个字符串参数**：它按日志正文渲染，不加引号、用近黑 / 近白正文色，
+后续字符串参数才按 `string`（带引号）着色。
+
+## 与手写格式指令共存
+
+以 `%c` / `%s` / `%o` 等指令开头的字符串参数会被原样保留，插件只在其前面追加标签，
+参数顺序不变：
+
+```ts
+console.log('%c👋 欢迎', 'color:#0d9488;font-weight:bold;')
+// 标签照常出现，👋 仍是你的绿色加粗，不会漏出裸 %c 或样式串
+console.log('覆盖率 100% 通过') // 文本中的 % 会转义，不会吞掉后续参数
+```
 
 ## 环境控制
 
-`highlight.env` 可强制输出环境（默认 `auto` 探测）：
+`highlight.env` 可强制输出环境（默认自动识别）：
 
 ```ts
-vitePlugin({ highlight: { env: 'terminal' } }) // 强制 ANSI
+vitePlugin({ highlight: { env: 'terminal' } }) // 强制终端配色（SSH / 远程调试时常用）
 vitePlugin({ highlight: { env: 'plain' } })    // 强制纯文本（CI 日志友好）
 ```
 

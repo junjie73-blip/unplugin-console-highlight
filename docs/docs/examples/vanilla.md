@@ -4,13 +4,13 @@
 
 ```bash
 pnpm install
-pnpm build        # 先构建核心包
+pnpm build        # 构建插件，示例直接引用本地包
 pnpm dev:vanilla  # 启动示例
 ```
 
 ## 配置
 
-示例使用**独立配置文件**（展示 jiti 加载 TS 配置的能力）：
+示例把配置写在**独立配置文件**里：
 
 ```ts [console-highlight.config.ts]
 import { defineConsoleHighlightConfig } from 'unplugin-console-highlight'
@@ -73,14 +73,14 @@ export function createUserService() {
 
 控制台输出（色块 + 后缀 tag/时间）：
 
-<span style="background:#1890ff;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">🚀 service.js·6 ~ list</span> <span style="color:#a31515">"用户列表"</span> [{…}] <span style="color:#57606a">[LOG] 2026-10-04 23:30:00</span>
+<span style="background:#2563eb;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">🚀 service.js·6 ~ list</span> <span style="color:#1f2328">用户列表</span> [{…}] <span style="color:#57606a">[LOG] 2026-10-04 23:30:00</span>
 
-<span style="background:#faad14;color:#1f2328;padding:2px 6px;border-radius:4px;font-weight:600">🚀 service.js·13 ~ find</span> <span style="color:#a31515">"用户不存在："</span> <span style="color:#a31515">"u-404"</span> <span style="color:#57606a">[WARN] 2026-10-04 23:30:00</span>
+<span style="background:#d97706;color:#ffffff;padding:2px 6px;border-radius:4px;font-weight:600">🚀 service.js·13 ~ find</span> <span style="color:#1f2328">用户不存在：</span> <span style="color:#a31515">"u-404"</span> <span style="color:#57606a">[WARN] 2026-10-04 23:30:00</span>
 
-<span style="background:#52c41a;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">🚀 service.js·21 ~ reportError</span> <span style="color:#a31515">"服务异常："</span> Error: demo failure <span style="color:#57606a">[ERROR] 2026-10-04 23:30:00</span>
+<span style="background:#059669;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">🚀 service.js·21 ~ reportError</span> <span style="color:#1f2328">服务异常：</span> Error: demo failure <span style="color:#57606a">[ERROR] 2026-10-04 23:30:00</span>
 
 要点：
 
-- class 方法 `list` / `find`、箭头函数 `reportError` 均被正确识别为函数名片段
-- 后缀展示方法标签与运行时间
-- Map 展开、Error 摘要由运行时序列化完成
+- class 方法 `list` / `find`、箭头函数 `reportError` 都能正确显示函数名
+- 后缀同时给出方法标签与打印时刻
+- Map 展开显示、Error 显示为 `名称: 消息`，正文「用户列表」这类首个字符串不带引号

@@ -8,7 +8,7 @@ import { vitePlugin } from 'unplugin-console-highlight'
 export default defineConfig({
   plugins: [
     vitePlugin({
-      // 所有配置项均可选，以下为默认值的显式写法
+      // 配置项均可选，这里只演示最常用的两个；不传也能直接用
       icon: '🚀',
       highlight: { mode: 'auto' },
     }),
@@ -28,19 +28,19 @@ export function logMessage() {
 
 启动 dev server 后打开 DevTools 控制台：
 
-<span style="background:#1890ff;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">🚀 log.ts·4 ~ logMessage</span> <span style="color:#a31515">"Hello TypeScript"</span>
+<span style="background:#2563eb;color:#fff;padding:2px 6px;border-radius:4px;font-weight:600">🚀 log.ts·4 ~ logMessage</span> <span style="color:#1f2328">Hello TypeScript</span>
 
 - 色块内容 = 图标 + 文件名·行号 ~ 函数名（顶层作用域自动省略 `~ 函数名`）
-- 色块颜色按文件名哈希自动选取，同一文件颜色稳定
-- 字符串 `"Hello TypeScript"` 按亮 / 暗模式 token 着色
+- 色块颜色按文件名自动选取，同一文件颜色稳定
+- `Hello TypeScript` 作为日志正文显示，不加引号；其后的字符串参数才带引号按字符串着色
 
 ## 4. 终端验证
 
-在 Node 脚本或 SSR 场景中，同一份产物输出 ANSI 色块：
+在 Node 脚本或 SSR 场景中，同一份代码会在终端里输出彩色标签：
 
 ```bash
 node dist/server.js
-# 🚀 log.ts·4 ~ logMessage "Hello TypeScript"（带 24-bit ANSI 背景与前景色）
+# 🚀 log.ts·4 ~ logMessage Hello TypeScript（终端里是真彩色色块与着色正文）
 ```
 
 ## 下一步
