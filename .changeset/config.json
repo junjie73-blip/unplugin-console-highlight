@@ -12,31 +12,6 @@
   "commit": true,
   "ignore": [],
   "fixed": [],
-  "linked": [
-    [
-      "unplugin-console-highlight",
-      "patch"
-    ],
-    [
-      "@console-highlight/example-vanilla",
-      "patch"
-    ],
-    [
-      "@console-highlight/example-vue",
-      "patch"
-    ],
-    [
-      "@console-highlight/example-react",
-      "patch"
-    ],
-    [
-      "@console-highlight/docs",
-      "patch"
-    ],
-    [
-      "@console-highlight/docs",
-      "patch"
-    ]
-  ],
+  "linked": [],
   "updateInternalDependencies": "patch"
 }
