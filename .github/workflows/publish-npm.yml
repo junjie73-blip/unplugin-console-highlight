@@ -3,7 +3,10 @@ name: Publish to npm
 on:
   push:
     tags:
+      # GitHub Actions 的 tag 模式区分大小写，两种前缀都要列出，
+      # 否则 V0.0.2 这类大写 tag 不会触发发布。
       - 'v*'
+      - 'V*'
   workflow_dispatch:
 
 permissions:
